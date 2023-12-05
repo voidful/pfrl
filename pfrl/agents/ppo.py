@@ -487,26 +487,26 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 states = self.obs_normalizer(states, update=False)
             actions = torch.tensor([b["action"] for b in batch], device=device)
             distribs, vs_pred = self.model(states)
-
+            that_model = next(self.model.child_modules[0].parameters())
             advs = torch.tensor(
-                [b["adv"] for b in batch], dtype=torch.float32, device=device
+                [b["adv"] for b in batch], dtype=that_model.dtype, device=device
             )
             if self.standardize_advantages:
                 advs = (advs - mean_advs) / (std_advs + 1e-8)
 
             log_probs_old = torch.tensor(
                 [b["log_prob"] for b in batch],
-                dtype=torch.float,
+                dtype=that_model.dtype,
                 device=device,
             )
             vs_pred_old = torch.tensor(
                 [b["v_pred"] for b in batch],
-                dtype=torch.float,
+                dtype=that_model.dtype,
                 device=device,
             )
             vs_teacher = torch.tensor(
                 [b["v_teacher"] for b in batch],
-                dtype=torch.float,
+                dtype=that_model.dtype,
                 device=device,
             )
             # Same shape as vs_pred: (batch_size, 1)
@@ -559,24 +559,24 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
         )
         flat_advs = torch.tensor(
             [transition["adv"] for transition in flat_transitions],
-            dtype=torch.float,
+            dtype=self.model.dtype,
             device=device,
         )
         if self.standardize_advantages:
             flat_advs = (flat_advs - mean_advs) / (std_advs + 1e-8)
         flat_log_probs_old = torch.tensor(
             [transition["log_prob"] for transition in flat_transitions],
-            dtype=torch.float,
+            dtype=self.model.dtype,
             device=device,
         )
         flat_vs_pred_old = torch.tensor(
             [[transition["v_pred"]] for transition in flat_transitions],
-            dtype=torch.float,
+            dtype=self.model.dtype,
             device=device,
         )
         flat_vs_teacher = torch.tensor(
             [[transition["v_teacher"]] for transition in flat_transitions],
-            dtype=torch.float,
+            dtype=self.model.dtype,
             device=device,
         )
 
